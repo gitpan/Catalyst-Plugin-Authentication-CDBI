@@ -25,7 +25,7 @@ SYNOPSIS
 
         CREATE TABLE role (
             id INTEGER PRIMARY KEY,
-            role TEXT
+            name TEXT
         );
 
         CREATE TABLE customer_role (

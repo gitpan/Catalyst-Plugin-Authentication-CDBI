@@ -3,7 +3,7 @@ package Catalyst::Plugin::Authentication::CDBI;
 use strict;
 use NEXT;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ Catalyst::Plugin::Authentication::CDBI - CDBI Authentication for Catalyst
 
     CREATE TABLE role (
         id INTEGER PRIMARY KEY,
-        role TEXT
+        name TEXT
     );
 
     CREATE TABLE customer_role (
@@ -69,7 +69,7 @@ Login.
 
 sub login {
     my ( $c, $user, $password ) = @_;
-    return 1 if $c->request->user;
+    return 1 if $c->request->{user};
     my $user_class     = $c->config->{authentication}->{user_class};
     my $user_field     = $c->config->{authentication}->{user_field} || 'user';
     my $password_field = $c->config->{authentication}->{password_field}
@@ -94,7 +94,7 @@ Logout.
 
 sub logout {
     my $c = shift;
-    $c->request->user(undef);
+    $c->request->{user} = undef;
 }
 
 sub prepare_action {
@@ -124,7 +124,7 @@ sub process_roles {
     my $user_class      = $c->config->{authentication}->{user_class};
     my $user_field      = $c->config->{authentication}->{user_field} || 'user';
     my $role_class      = $c->config->{authentication}->{role_class};
-    my $role_field      = $c->config->{authentication}->{role_field} || 'role';
+    my $role_field      = $c->config->{authentication}->{role_field} || 'name';
     my $user_role_class = $c->config->{authentication}->{user_role_class};
     my $user_role_user_field =
       $c->config->{authentication}->{user_role_user_field} || 'user';
