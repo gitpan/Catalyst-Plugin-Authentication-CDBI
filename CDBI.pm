@@ -3,7 +3,7 @@ package Catalyst::Plugin::Authentication::CDBI;
 use strict;
 use NEXT;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -23,6 +23,7 @@ Catalyst::Plugin::Authentication::CDBI - CDBI Authentication for Catalyst
     $c->logout;
     $c->session_login( $user, $password );
     $c->session_logout;
+    $c->roles(qw/customer admin/);
 
     CREATE TABLE customer (
         id INTEGER PRIMARY KEY,
@@ -102,6 +103,22 @@ sub prepare_action {
     $c->request->{user} = $c->session->{user};
 }
 
+sub process_permission {
+    my ( $c, $roles ) = @_;
+    if ($roles) {
+        return 1 if $#$roles < 0;
+        my $string = join ' ', @$roles;
+        if ( $c->process_roles($roles) ) {
+            $c->log->debug(qq/Permission granted "$string"/) if $c->debug;
+        }
+        else {
+            $c->log->debug(qq/Permission denied "$string"/) if $c->debug;
+            return 0;
+        }
+    }
+    return 1;
+}
+
 sub process_roles {
     my ( $c, $roles ) = @_;
     my $user_class      = $c->config->{authentication}->{user_class};
@@ -134,6 +151,37 @@ sub process_roles {
     }
     else { return 0 }
     return 1;
+}
+
+=head3 roles
+
+Check permissions for roles and return true or false.
+
+    $c->roles(qw/foo bar/);
+
+Returns an arrayref containing the verified roles.
+
+    my @roles = @{ $c->roles };
+
+=cut
+
+sub roles {
+    my $c = shift;
+    $c->{roles} ||= [];
+    my $roles = ref $_[0] eq 'ARRAY' ? $_[0] : [@_];
+    if ( $_[0] ) {
+        my @roles;
+        foreach my $role (@$roles) {
+            push @roles, $role unless grep $role, @{ $c->{roles} };
+        }
+        return 1 unless @roles;
+        if ( $c->process_permission( \@roles ) ) {
+            $c->{roles} = [ @{ $c->{roles} }, @roles ];
+            return 1;
+        }
+        else { return 0 }
+    }
+    return $c->{roles};
 }
 
 =head3 session_login

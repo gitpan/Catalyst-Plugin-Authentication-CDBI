@@ -1,4 +1,8 @@
 Revision history for Perl extension Catalyst::Plugin::Authentication::CDBI.
 
+0.02  Sat Feb 19 20:00:00 2005
+        - added roles management and stuff from Catalyst::Engine
+          Note that you need at least Catalyst 3.10!
+
 0.01  Fri Jan 28 22:00:00 2005
         - first release

@@ -15,6 +15,7 @@ SYNOPSIS
         $c->logout;
         $c->session_login( $user, $password );
         $c->session_logout;
+        $c->roles(qw/customer admin/);
 
         CREATE TABLE customer (
             id INTEGER PRIMARY KEY,
@@ -50,6 +51,15 @@ DESCRIPTION
 
    logout
     Logout.
+
+   roles
+    Check permissions for roles and return true or false.
+
+        $c->roles(qw/foo bar/);
+
+    Returns an arrayref containing the verified roles.
+
+        my @roles = @{ $c->roles };
 
    session_login
     Login.
