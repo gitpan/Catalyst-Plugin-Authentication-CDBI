@@ -1,5 +1,8 @@
 Revision history for Perl extension Catalyst::Plugin::Authentication::CDBI.
 
+0.04  Mon Mar 7 20:00:00 2005
+        - bugfix $c->req->user -> $c->req->{user}
+
 0.03  Sat Feb 19 20:00:00 2005
         - changed default fieldname role -> name
 

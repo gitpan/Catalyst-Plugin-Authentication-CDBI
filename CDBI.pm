@@ -3,7 +3,7 @@ package Catalyst::Plugin::Authentication::CDBI;
 use strict;
 use NEXT;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 NAME
 
@@ -132,7 +132,7 @@ sub process_roles {
       $c->config->{authentication}->{user_role_role_field} || 'role';
 
     if ( my $user =
-        $user_class->search( { $user_field => $c->request->user } )->first )
+        $user_class->search( { $user_field => $c->request->{user} } )->first )
     {
         for my $role (@$roles) {
             if ( my $role =
