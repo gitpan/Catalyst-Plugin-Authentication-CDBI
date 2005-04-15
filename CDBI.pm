@@ -3,7 +3,7 @@ package Catalyst::Plugin::Authentication::CDBI;
 use strict;
 use NEXT;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 NAME
 
@@ -47,23 +47,17 @@ Catalyst::Plugin::Authentication::CDBI - CDBI Authentication for Catalyst
 Note that this plugin requires a session plugin like
 C<Catalyst::Plugin::Session::FastMmap>.
 
-=head2 EXTENDED METHODS
-
-=head3 prepare_action
-
-=head3 setup
-
-=head2 OVERLOADED METHODS
-
-=head3 process_roles
-
 =head2 METHODS
 
-=head3 login
+=over 4
 
-Login.
+=item login
+
+Attempt to authenticate a user. Takes username/password as arguments,
 
     $c->login( $user, $password );
+
+User remains authenticated until end of request.
 
 =cut
 
@@ -86,9 +80,10 @@ sub login {
     return 0;
 }
 
-=head3 logout
+=item logout
 
-Logout.
+Log out the user. will not clear the session, so user will still remain
+logged in at next request unless session_logout is called.
 
 =cut
 
@@ -97,11 +92,11 @@ sub logout {
     $c->request->{user} = undef;
 }
 
-sub prepare_action {
-    my $c = shift;
-    $c->NEXT::prepare_action(@_);
-    $c->request->{user} = $c->session->{user};
-}
+=item process_permission
+
+check for permissions. used by the 'roles' function.
+
+=cut
 
 sub process_permission {
     my ( $c, $roles ) = @_;
@@ -118,6 +113,111 @@ sub process_permission {
     }
     return 1;
 }
+
+=item roles
+
+Check permissions for roles and return true or false.
+
+    $c->roles(qw/foo bar/);
+
+Returns an arrayref containing the verified roles.
+
+    my @roles = @{ $c->roles };
+
+=cut
+
+sub roles {
+    my $c = shift;
+    $c->{roles} ||= [];
+    my $roles = ref $_[0] eq 'ARRAY' ? $_[0] : [@_];
+    if ( $_[0] ) {
+        my @roles;
+        foreach my $role (@$roles) {
+            push @roles, $role unless grep $_ eq $role, @{ $c->{roles} };
+        }
+        return 1 unless @roles;
+        if ( $c->process_permission( \@roles ) ) {
+            $c->{roles} = [ @{ $c->{roles} }, @roles ];
+            return 1;
+        }
+        else { return 0 }
+    }
+    return $c->{roles};
+}
+
+=item session_login
+
+Persistently login the user. The user will remain logged in
+until he clears the session himself, or session_logout is
+called.
+
+    $c->session_login( $user, $password );
+
+=cut
+
+sub session_login {
+    my ( $c, $user, $password ) = @_;
+    return 0 unless $c->login( $user, $password );
+    $c->session->{user} = $user;
+    return 1;
+}
+
+=item session_logout
+
+Session logout. will delete the user object from the session.
+
+=cut
+
+sub session_logout {
+    my $c = shift;
+    $c->logout;
+    $c->session->{user} = undef;
+}
+
+=back
+
+=head2 EXTENDED METHODS
+
+=over 4
+
+=item prepare_action
+
+sets $c->request->{user} from session.
+
+=cut
+
+sub prepare_action {
+    my $c = shift;
+    $c->NEXT::prepare_action(@_);
+    $c->request->{user} = $c->session->{user};
+}
+
+=item setup
+
+sets up $c->config->{authentication}.
+
+=cut
+
+sub setup {
+    my $c    = shift;
+    my $conf = $c->config->{authentication};
+    $conf = ref $conf eq 'ARRAY' ? {@$conf} : $conf;
+    $c->config->{authentication} = $conf;
+    return $c->NEXT::setup(@_);
+}
+
+=back
+
+=head2 OVERLOADED METHODS
+
+=over 4
+
+=item process_roles 
+
+Takes an arrayref of roles and checks if user has the supplied roles. 
+Returns 1/0.
+
+=cut
 
 sub process_roles {
     my ( $c, $roles ) = @_;
@@ -153,71 +253,8 @@ sub process_roles {
     return 1;
 }
 
-=head3 roles
+=back
 
-Check permissions for roles and return true or false.
-
-    $c->roles(qw/foo bar/);
-
-Returns an arrayref containing the verified roles.
-
-    my @roles = @{ $c->roles };
-
-=cut
-
-sub roles {
-    my $c = shift;
-    $c->{roles} ||= [];
-    my $roles = ref $_[0] eq 'ARRAY' ? $_[0] : [@_];
-    if ( $_[0] ) {
-        my @roles;
-        foreach my $role (@$roles) {
-            push @roles, $role unless grep $role, @{ $c->{roles} };
-        }
-        return 1 unless @roles;
-        if ( $c->process_permission( \@roles ) ) {
-            $c->{roles} = [ @{ $c->{roles} }, @roles ];
-            return 1;
-        }
-        else { return 0 }
-    }
-    return $c->{roles};
-}
-
-=head3 session_login
-
-Login.
-
-    $c->session_login( $user, $password );
-
-=cut
-
-sub session_login {
-    my ( $c, $user, $password ) = @_;
-    return 0 unless $c->login( $user, $password );
-    $c->session->{user} = $user;
-    return 1;
-}
-
-=head3 session_logout
-
-Session logout.
-
-=cut
-
-sub session_logout {
-    my $c = shift;
-    $c->logout;
-    $c->session->{user} = undef;
-}
-
-sub setup {
-    my $c    = shift;
-    my $conf = $c->config->{authentication};
-    $conf = ref $conf eq 'ARRAY' ? {@$conf} : $conf;
-    $c->config->{authentication} = $conf;
-    return $c->NEXT::setup(@_);
-}
 
 =head1 SEE ALSO
 
@@ -226,6 +263,7 @@ L<Catalyst>.
 =head1 AUTHOR
 
 Sebastian Riedel, C<sri@cpan.org>
+Marcus Ramberg, C<mramberg@cpan.org>
 
 =head1 COPYRIGHT
 

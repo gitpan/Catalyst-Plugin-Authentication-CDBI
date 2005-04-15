@@ -1,5 +1,9 @@
 Revision history for Perl extension Catalyst::Plugin::Authentication::CDBI.
 
+0.05  Fri Apr 15 16:04:00 2005
+        - Extended and restructured the documentation
+        - Added pod tests.
+        - patch from anonymous
 0.04  Mon Mar 7 20:00:00 2005
         - bugfix $c->req->user -> $c->req->{user}
 
