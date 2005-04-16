@@ -3,7 +3,7 @@ package Catalyst::Plugin::Authentication::CDBI;
 use strict;
 use NEXT;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 =head1 NAME
 
@@ -15,6 +15,8 @@ Catalyst::Plugin::Authentication::CDBI - CDBI Authentication for Catalyst
     __PACKAGE__->config->{authentication} = (
         user_class           => 'PetStore::Model::CDBI::Customer',
         user_field           => 'email',
+        password_field       => 'password',
+        password_hash        => 'SHA',
         role_class           => 'PetStore::Model::CDBI::Role',
         user_role_class      => 'PetStore::Model::CDBI::CustomerRole',
         user_role_user_field => 'customer'
@@ -59,6 +61,10 @@ Attempt to authenticate a user. Takes username/password as arguments,
 
 User remains authenticated until end of request.
 
+If your passwords are stored as hashes, specify a
+password_hash value when setting up your authentication hash.
+Supported values are SHA and MD5.
+
 =cut
 
 sub login {
@@ -68,6 +74,14 @@ sub login {
     my $user_field     = $c->config->{authentication}->{user_field} || 'user';
     my $password_field = $c->config->{authentication}->{password_field}
       || 'password';
+    my $password_hash  = $c->config->{authentication}->{password_hash};
+    if ($password_hash =~ /sha/i) {
+        require Digest::SHA;
+        $password = Digest::SHA::sha1_hex($password);
+    } elsif ($password_hash =~ /md5/i) {
+        require Digest::MD5;
+        $password = Digest::MD5::md5_hex($password);
+    }
     if (
         $user_class->search(
             { $user_field => $user, $password_field => $password }

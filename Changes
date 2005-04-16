@@ -1,5 +1,7 @@
 Revision history for Perl extension Catalyst::Plugin::Authentication::CDBI.
 
+0.06  Fri Apr 15 16:04:00 2005
+        - added md5 and sha hashed password support (Andy Grundman)
 0.05  Fri Apr 15 16:04:00 2005
         - Extended and restructured the documentation
         - Added pod tests.

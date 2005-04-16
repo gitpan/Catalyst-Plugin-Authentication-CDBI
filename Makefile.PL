@@ -6,7 +6,7 @@ WriteMakefile(
     PREREQ_PM => {
         Catalyst                            => '2.99',
         Catalyst::Model::CDBI               => 0,
-        Catalyst::Plugin::Session::FastMmap => 0
+        Catalyst::Plugin::Session::FastMmap => 0,
     },
     VERSION_FROM => 'CDBI.pm'
 );
