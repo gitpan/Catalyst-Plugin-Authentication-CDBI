@@ -3,7 +3,7 @@ package Catalyst::Plugin::Authentication::CDBI;
 use strict;
 use NEXT;
 
-our $VERSION = '0.06';
+our $VERSION = '0.09';
 
 =head1 NAME
 
@@ -12,15 +12,13 @@ Catalyst::Plugin::Authentication::CDBI - CDBI Authentication for Catalyst
 =head1 SYNOPSIS
 
     use Catalyst 'Authentication::CDBI';
-    __PACKAGE__->config->{authentication} = (
+    __PACKAGE__->config->{authentication} = {
         user_class           => 'PetStore::Model::CDBI::Customer',
         user_field           => 'email',
-        password_field       => 'password',
-        password_hash        => 'SHA',
         role_class           => 'PetStore::Model::CDBI::Role',
         user_role_class      => 'PetStore::Model::CDBI::CustomerRole',
         user_role_user_field => 'customer'
-    );
+    };
     $c->login( $user, $password );
     $c->logout;
     $c->session_login( $user, $password );
@@ -61,10 +59,6 @@ Attempt to authenticate a user. Takes username/password as arguments,
 
 User remains authenticated until end of request.
 
-If your passwords are stored as hashes, specify a
-password_hash value when setting up your authentication hash.
-Supported values are SHA and MD5.
-
 =cut
 
 sub login {
@@ -74,21 +68,23 @@ sub login {
     my $user_field     = $c->config->{authentication}->{user_field} || 'user';
     my $password_field = $c->config->{authentication}->{password_field}
       || 'password';
-    my $password_hash  = $c->config->{authentication}->{password_hash};
-    if ($password_hash =~ /sha/i) {
+    my $password_hash = $c->config->{authentication}->{password_hash} || '';
+    if ( $password_hash =~ /sha/i ) {
         require Digest::SHA;
         $password = Digest::SHA::sha1_hex($password);
-    } elsif ($password_hash =~ /md5/i) {
+    }
+    elsif ( $password_hash =~ /md5/i ) {
         require Digest::MD5;
         $password = Digest::MD5::md5_hex($password);
     }
     if (
-        $user_class->search(
+        my $user_obj=$user_class->search(
             { $user_field => $user, $password_field => $password }
-        )
+        )->next
       )
     {
         $c->request->{user} = $user;
+        $c->request->{user_id} = $user_obj->id;
         return 1;
     }
     return 0;
@@ -104,6 +100,7 @@ logged in at next request unless session_logout is called.
 sub logout {
     my $c = shift;
     $c->request->{user} = undef;
+    $c->request->{user_id} = undef;
 }
 
 =item process_permission
@@ -172,7 +169,8 @@ called.
 sub session_login {
     my ( $c, $user, $password ) = @_;
     return 0 unless $c->login( $user, $password );
-    $c->session->{user} = $user;
+    $c->session->{user} = $c->req->{user};
+    $c->session->{user_id} = $c->req->{user_id};
     return 1;
 }
 
@@ -186,6 +184,7 @@ sub session_logout {
     my $c = shift;
     $c->logout;
     $c->session->{user} = undef;
+    $c->session->{user_id} = undef;
 }
 
 =back
@@ -204,6 +203,7 @@ sub prepare_action {
     my $c = shift;
     $c->NEXT::prepare_action(@_);
     $c->request->{user} = $c->session->{user};
+    $c->request->{user_id} = $c->session->{user_id};
 }
 
 =item setup
