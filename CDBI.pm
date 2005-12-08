@@ -3,7 +3,7 @@ package Catalyst::Plugin::Authentication::CDBI;
 use strict;
 use NEXT;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 =head1 NAME
 
@@ -44,8 +44,65 @@ Catalyst::Plugin::Authentication::CDBI - CDBI Authentication for Catalyst
 
 =head1 DESCRIPTION
 
-Note that this plugin requires a session plugin like
+This plugin allows you to authenticate your web users using database
+tables accessed through C<Class::DBI> classes.
+
+Note that this plugin requires a session plugin such as
 C<Catalyst::Plugin::Session::FastMmap>.
+
+This module is now well past the teatime of it's lifespan, and
+no new features will be added. For new applications, you probably
+want to look at L<Catalyst::Plugin::Authentication> and friends
+instead
+
+=head1 CONFIGURATION
+
+This plugin is configured by passing an "authentication" hash
+reference to your application's config method.  The following keys are
+supported:
+
+=over 4
+
+=item user_class
+
+the name of the class that represents a user object (no default)
+
+=item user_field
+
+the name of the column holding the user identifier (defaults to "C<user>")
+
+=item password_field
+
+the name of the column holding the user's password (defaults to "C<password>")
+
+=item password_hash
+
+specifies the hashing method for password values; one of: C<SHA> or
+C<MD5> (the values are not case-sensitive and the default is empty,
+i.e. no hashing).
+
+=item role_class
+
+the name of the role class
+
+=item role_field
+
+name of the role field
+
+
+=item user_role_class
+
+
+=item user_role_user_field
+
+(defaults to "C<uer>")
+
+=item user_role_role_field
+
+(defaults to "C<role>")
+
+=back
+
 
 =head2 METHODS
 
@@ -57,7 +114,8 @@ Attempt to authenticate a user. Takes username/password as arguments,
 
     $c->login( $user, $password );
 
-User remains authenticated until end of request.
+The user remains authenticated until end of request.  See
+C<session_login> for persistent login.
 
 =cut
 
@@ -272,12 +330,13 @@ sub process_roles {
 
 =head1 SEE ALSO
 
-L<Catalyst>.
+L<Catalyst>, L<Catalyst::Plugin::Session::FastMmap>
 
 =head1 AUTHOR
 
-Sebastian Riedel, C<sri@cpan.org>
-Marcus Ramberg, C<mramberg@cpan.org>
+Sebastian Riedel <sri@cpan.org>,
+Marcus Ramberg <mramberg@cpan.org>,
+Andrew Ford <a.ford@ford-mason.co.uk>
 
 =head1 COPYRIGHT
 
